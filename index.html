@@ -439,7 +439,13 @@ function load() {
     if (x === undefined || y === undefined) { if (x || y) s.runs[m] = x || y; continue; }
     if (!x || !y) { const r = x || y; if (!r || (s.gone && s.gone[r.id]) || bank(s, r) || doneOf(r)) { s.runs[m] = null; continue; } const bd = bookOf(s, r.mode); if (!bd || !bd[r.date]) s.runs[m] = r; continue; }
     if (x.id !== y.id && x.date !== y.date) { const [w, l] = x.date > y.date ? [x, y] : [y, x]; bank(s, l); s.runs[m] = w; }
-    else if (x.id === y.id) { const px = prog(x), py = prog(y); s.runs[m] = px > py ? x : py > px ? y : n.runs[m]; }
+    else if (x.id === y.id) {
+      const px = prog(x), py = prog(y); let r = px > py ? x : py > px ? y : n.runs[m];
+      // 同じ問題の途中なら、両方のタブのまちがい・ヒントを合わせる（片方のまちがいを落とさない。gairai-miwake PR #1 の CodeRabbit）
+      const rl = (q) => (q.res ? q.res.length : 0), u = (p, q) => [...new Set([...(Array.isArray(p) ? p : []), ...(Array.isArray(q) ? q : [])])];
+      if (r && rl(x) === rl(y) && x.cur && y.cur && x.cur.i === y.cur.i && x.cur.tag === y.cur.tag) r = Object.assign({}, r, { cur: Object.assign({}, r.cur, { wrong: u(x.cur.wrong, y.cur.wrong), w2: u(x.cur.w2, y.cur.w2), hints: Math.max(x.cur.hints || 0, y.cur.hints || 0), step: Math.max(x.cur.step || 1, y.cur.step || 1), h2: x.cur.h2 || y.cur.h2 ? 1 : 0 }) });
+      s.runs[m] = r;
+    }
   }
   return tidy(s);
 }

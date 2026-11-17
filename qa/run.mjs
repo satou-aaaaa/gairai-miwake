@@ -347,6 +347,22 @@ try {
     await ctx.close();
   }
 
+  // 同じ問題で、保存できなかったタブのまちがいと、別のタブのまちがいが両方残る（gairai-miwake PR #1 の CodeRabbit）
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } });
+    const g = await newPage(390, ctx);
+    const cur = await g.evaluate(() => {
+      const r = (w, h) => ({ mode: "p", date: __nm.todayKey(), list: ["araiguma|1", "okuchi|1"], res: [], cur: { i: 0, tag: "araiguma|1", wrong: [w], hints: h, step: 1, w2: [], jd: null, h2: 0 }, id: "two1" });
+      const base = __nm.load();
+      const a = JSON.parse(JSON.stringify(base)); a.runs.p = r("在来種", 0); a.t = 100;
+      const b = JSON.parse(JSON.stringify(base)); b.runs.p = r("外来種（指定なし）", 1); b.t = 200;
+      localStorage.setItem("gai-v1", JSON.stringify(b)); __nm.setMem(JSON.stringify(a));
+      try { return __nm.load().runs.p.cur; } finally { __nm.setMem(null); }
+    });
+    check("同じ問題の途中は、両方のタブのまちがいを合わせ、ヒントは多いほうを残す", cur && cur.wrong.length === 2 && cur.hints === 1, JSON.stringify(cur));
+    await ctx.close();
+  }
+
   // 古いタブ：同じ問題を2つのタブで開き、片方で答えたら、もう片方は二重に入れない
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } });
